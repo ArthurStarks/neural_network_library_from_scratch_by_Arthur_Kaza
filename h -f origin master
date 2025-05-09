@@ -1,0 +1,5 @@
+[33mdeed3b9[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m Fix CI workflow and add documentation setup
+[33m084ab7f[m Add visualization features and integration tests
+[33mf00fb59[m Add network visualizer and improve documentation
+[33m0be959b[m Add documentation and MNIST example with visualization
+[33mcb0dde9[m Initial commit: Neural Network Library from Scratch by Arthur Kaza
