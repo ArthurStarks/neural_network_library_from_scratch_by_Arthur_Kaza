@@ -14,23 +14,38 @@ public class Neuron {
     private final List<Connection> outputConnections;
     private final Activation activation;
     private static final Random random = new Random();
+    
+    // OPTIMIZATION: Pre-computed values to avoid recalculation
+    private double cachedWeightedSum;
+    private boolean weightedSumValid;
 
     public Neuron(Activation activation) {
         this.activation = activation;
         this.bias = random.nextDouble() * 2 - 1; // Initialize between -1 and 1
-        this.inputConnections = new ArrayList<>();
-        this.outputConnections = new ArrayList<>();
+        this.inputConnections = new ArrayList<>(8); // OPTIMIZATION: Pre-size for typical connections
+        this.outputConnections = new ArrayList<>(8); // OPTIMIZATION: Pre-size for typical connections
         this.delta = 0.0;
         this.biasMomentum = 0.0;
         this.biasVariance = 0.0;
+        this.weightedSumValid = false;
     }
 
     public void computeOutput() {
+        if (!weightedSumValid) {
+            computeWeightedSum();
+        }
+        this.activationValue = activation.activate(cachedWeightedSum);
+        weightedSumValid = false; // Invalidate cache for next computation
+    }
+    
+    // OPTIMIZATION: Separate weighted sum computation for potential reuse
+    private void computeWeightedSum() {
         double weightedSum = bias;
         for (Connection connection : inputConnections) {
             weightedSum += connection.getFromNeuron().getActivationValue() * connection.getWeight();
         }
-        this.activationValue = activation.activate(weightedSum);
+        this.cachedWeightedSum = weightedSum;
+        this.weightedSumValid = true;
     }
 
     public void computeDelta(double target) {
@@ -48,7 +63,9 @@ public class Neuron {
     }
 
     private void updateConnections() {
-        for (Connection connection : inputConnections) {
+        // OPTIMIZATION: Use direct array access for better performance
+        for (int i = 0; i < inputConnections.size(); i++) {
+            Connection connection = inputConnections.get(i);
             connection.addDeltaWeight(delta * connection.getFromNeuron().getActivationValue());
         }
     }
@@ -71,6 +88,7 @@ public class Neuron {
 
     public void setActivationValue(double activationValue) {
         this.activationValue = activationValue;
+        this.weightedSumValid = false; // Invalidate cache when input changes
     }
 
     public double getBias() {

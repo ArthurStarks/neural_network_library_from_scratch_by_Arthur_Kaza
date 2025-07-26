@@ -11,12 +11,16 @@ public class Layer {
     private final int outputSize;
     private final Optimizer optimizer;
     private static final Random random = new Random();
+    
+    // OPTIMIZATION: Pre-allocated output array to reduce GC pressure
+    private final double[] outputBuffer;
 
     public Layer(int inputSize, int outputSize, Activation activation, Optimizer optimizer) {
         this.inputSize = inputSize;
         this.outputSize = outputSize;
         this.optimizer = optimizer;
-        this.neurons = new ArrayList<>();
+        this.neurons = new ArrayList<>(outputSize); // OPTIMIZATION: Pre-size ArrayList
+        this.outputBuffer = new double[outputSize]; // OPTIMIZATION: Pre-allocate output buffer
         
         for (int i = 0; i < outputSize; i++) {
             neurons.add(new Neuron(activation));
@@ -76,11 +80,11 @@ public class Layer {
     }
 
     public double[] getOutputs() {
-        double[] outputs = new double[neurons.size()];
+        // OPTIMIZATION: Use pre-allocated buffer instead of creating new array
         for (int i = 0; i < neurons.size(); i++) {
-            outputs[i] = neurons.get(i).getActivationValue();
+            outputBuffer[i] = neurons.get(i).getActivationValue();
         }
-        return outputs;
+        return outputBuffer;
     }
 
     public int getInputSize() {

@@ -9,6 +9,8 @@ public class Network {
     private final double learningRate;
     private final Loss lossFunction;
     private final Optimizer optimizer;
+    // OPTIMIZATION: Reuse output arrays to reduce GC pressure
+    private double[] lastOutput;
 
     public Network(double learningRate, Loss lossFunction, Optimizer optimizer) {
         this.layers = new ArrayList<>();
@@ -37,8 +39,13 @@ public class Network {
             layer.forward();
         }
 
-        // Return outputs from last layer
-        return layers.get(layers.size() - 1).getOutputs();
+        // OPTIMIZATION: Reuse output array if possible
+        double[] outputs = layers.get(layers.size() - 1).getOutputs();
+        if (lastOutput == null || lastOutput.length != outputs.length) {
+            lastOutput = new double[outputs.length];
+        }
+        System.arraycopy(outputs, 0, lastOutput, 0, outputs.length);
+        return lastOutput;
     }
 
     public void backward(double[] inputs, double[] targets) {
@@ -46,11 +53,8 @@ public class Network {
             throw new IllegalStateException("Network has no layers");
         }
 
-        // Forward pass to compute all outputs
-        forward(inputs);
-
-        // Compute loss and gradients
-        double[] predictions = layers.get(layers.size() - 1).getOutputs();
+        // OPTIMIZATION: Single forward pass, reuse outputs
+        double[] predictions = forward(inputs);
         double[] gradients = lossFunction.derivative(predictions, targets);
 
         // Backward pass through layers
